@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,18 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy,
+} from "firebase/firestore"; 
+import { db } from './firebaseConfig';
 
 export default function DailyTaskList() {
   const [tasks, setTasks] = useState([]);
@@ -17,59 +29,71 @@ export default function DailyTaskList() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
-  const renderRightActions = (taskId) => {
-    return (
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDelete(taskId)}
-      >
-        <Text style={styles.deleteButtonText}>削除</Text>
-      </TouchableOpacity>
-    );
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  // Firestoreからタスクを取得
+  const fetchTasks = () => {
+    const tasksQuery = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    onSnapshot(tasksQuery, (snapshot) => {
+      const fetchedTasks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(fetchedTasks);
+    });
   };
 
-  const onDelete = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  };
-
-  const addTask = () => {
+  // Firestoreにタスクを追加
+  const addTask = async () => {
     if (newTask.trim()) {
-      setTasks([
-        ...tasks,
-        { id: Date.now().toString(), title: newTask, completed: false },
-      ]);
+      await addDoc(collection(db, "tasks"), {
+        title: newTask,
+        completed: false,
+        createdAt: serverTimestamp(),
+      });
       setNewTask("");
     }
   };
 
-  const toggleTaskCompletion = (taskId) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  // Firestoreでタスクを削除
+  const onDelete = async (taskId) => {
+    await deleteDoc(doc(db, "tasks", taskId));
   };
 
+  // タスクの完了状態を切り替え
+  const toggleTaskCompletion = async (taskId, currentStatus) => {
+    await updateDoc(doc(db, "tasks", taskId), {
+      completed: !currentStatus,
+    });
+  };
+
+  // 編集モードの開始
   const startEditing = (task) => {
     setEditingTaskId(task.id);
     setEditingText(task.title);
   };
 
-  const saveEditing = (taskId) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, title: editingText } : task
-      )
-    );
+  // 編集内容の保存
+  const saveEditing = async (taskId) => {
+    await updateDoc(doc(db, "tasks", taskId), {
+      title: editingText,
+    });
     setEditingTaskId(null);
     setEditingText("");
   };
 
   const completionRate = tasks.length
-    ? Math.round(
-        (tasks.filter((task) => task.completed).length / tasks.length) * 100
-      )
+    ? Math.round((tasks.filter((task) => task.completed).length / tasks.length) * 100)
     : 0;
+
+  // 削除ボタンの表示
+  const renderRightActions = (taskId) => (
+    <TouchableOpacity onPress={() => onDelete(taskId)} style={styles.deleteButton}>
+      <Text style={styles.deleteButtonText}>削除</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -79,7 +103,7 @@ export default function DailyTaskList() {
         placeholder="タスクを入力"
         value={newTask}
         onChangeText={setNewTask}
-        onSubmitEditing={addTask} // 修正: ここでタスクを追加
+        onSubmitEditing={addTask}
       />
       <Button title="追加" onPress={addTask} />
       <FlatList
@@ -88,11 +112,9 @@ export default function DailyTaskList() {
         renderItem={({ item }) => (
           <Swipeable renderRightActions={() => renderRightActions(item.id)}>
             <View style={styles.taskContainer}>
-              <TouchableOpacity onPress={() => toggleTaskCompletion(item.id)}>
+              <TouchableOpacity onPress={() => toggleTaskCompletion(item.id, item.completed)}>
                 <MaterialIcons
-                  name={
-                    item.completed ? "check-box" : "check-box-outline-blank"
-                  }
+                  name={item.completed ? "check-box" : "check-box-outline-blank"}
                   size={24}
                   color={"green"}
                 />
@@ -105,18 +127,10 @@ export default function DailyTaskList() {
                   onSubmitEditing={() => saveEditing(item.id)}
                 />
               ) : (
-                <TouchableOpacity onPress={() => toggleTaskCompletion(item.id)}>
-                  <Text
-                    style={[
-                      styles.taskText,
-                      item.completed && styles.completedText,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                </TouchableOpacity>
+                <Text style={[styles.taskText, item.completed && styles.completedText]}>
+                  {item.title}
+                </Text>
               )}
-
               {editingTaskId === item.id ? (
                 <TouchableOpacity onPress={() => saveEditing(item.id)}>
                   <MaterialIcons name="check" size={24} color="#0074fe" />
@@ -168,4 +182,4 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-}); 
+});

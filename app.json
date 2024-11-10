@@ -1,6 +1,5 @@
 {
   "expo": {
-   
     "name": "festina-lente",
     "slug": "festina-lente",
     "version": "1.0.0",
@@ -23,8 +22,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }
-
-
