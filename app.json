@@ -1,5 +1,6 @@
 {
   "expo": {
+   
     "name": "festina-lente",
     "slug": "festina-lente",
     "version": "1.0.0",
@@ -25,3 +26,5 @@
     }
   }
 }
+
+
