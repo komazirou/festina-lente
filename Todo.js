@@ -20,8 +20,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
-} from "firebase/firestore"; 
-import { db } from './firebaseConfig';
+} from "firebase/firestore";
+import { db } from "./firebaseConfig";
 
 export default function DailyTaskList() {
   const [tasks, setTasks] = useState([]);
@@ -30,12 +30,33 @@ export default function DailyTaskList() {
   const [editingText, setEditingText] = useState("");
 
   useEffect(() => {
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      orderBy("createdAt", "desc")
+    );
+
+    // onSnapshotでリアルタイムリスナーを使用し、キャッシュからの即時データ取得をサポート
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+      const fetchedTasks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(fetchedTasks);
+    });
+
+    return () => unsubscribe(); // クリーンアップ用
+  }, []);
+
+  useEffect(() => {
     fetchTasks();
   }, []);
 
   // Firestoreからタスクを取得
   const fetchTasks = () => {
-    const tasksQuery = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const tasksQuery = query(
+      collection(db, "tasks"),
+      orderBy("createdAt", "desc")
+    );
     onSnapshot(tasksQuery, (snapshot) => {
       const fetchedTasks = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -48,7 +69,7 @@ export default function DailyTaskList() {
   // Firestoreにタスクを追加
   const addTask = async () => {
     if (newTask.trim()) {
-      await addDoc(collection(db, "tasks"), {
+      await addDoc(collection(db, `days/${day}/tasks`), {
         title: newTask,
         completed: false,
         createdAt: serverTimestamp(),
@@ -85,12 +106,17 @@ export default function DailyTaskList() {
   };
 
   const completionRate = tasks.length
-    ? Math.round((tasks.filter((task) => task.completed).length / tasks.length) * 100)
+    ? Math.round(
+        (tasks.filter((task) => task.completed).length / tasks.length) * 100
+      )
     : 0;
 
   // 削除ボタンの表示
   const renderRightActions = (taskId) => (
-    <TouchableOpacity onPress={() => onDelete(taskId)} style={styles.deleteButton}>
+    <TouchableOpacity
+      onPress={() => onDelete(taskId)}
+      style={styles.deleteButton}
+    >
       <Text style={styles.deleteButtonText}>削除</Text>
     </TouchableOpacity>
   );
@@ -112,9 +138,13 @@ export default function DailyTaskList() {
         renderItem={({ item }) => (
           <Swipeable renderRightActions={() => renderRightActions(item.id)}>
             <View style={styles.taskContainer}>
-              <TouchableOpacity onPress={() => toggleTaskCompletion(item.id, item.completed)}>
+              <TouchableOpacity
+                onPress={() => toggleTaskCompletion(item.id, item.completed)}
+              >
                 <MaterialIcons
-                  name={item.completed ? "check-box" : "check-box-outline-blank"}
+                  name={
+                    item.completed ? "check-box" : "check-box-outline-blank"
+                  }
                   size={24}
                   color={"green"}
                 />
@@ -127,7 +157,13 @@ export default function DailyTaskList() {
                   onSubmitEditing={() => saveEditing(item.id)}
                 />
               ) : (
-                <Text style={[styles.taskText, item.completed && styles.completedText]}>
+                <Text
+                  style={[
+                    styles.taskText,
+                    item.completed && styles.completedText,
+                  ]}
+                  onPress={() => toggleTaskCompletion(item.id, item.completed)}
+                >
                   {item.title}
                 </Text>
               )}

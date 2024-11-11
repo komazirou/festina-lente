@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
+import { Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 export default function WeekScreen({ route }) {
