@@ -1,5 +1,10 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentIndexedDbCache,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDF7n2EB4w_SnOGWUb6puRcHIL8yxcvvkU",
@@ -16,11 +21,14 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Firestore のインスタンスの取得または初期化、キャッシュ設定を使用
 const db = getApps().length
-  ? getFirestore(app)  // すでに初期化されている場合、getFirestoreで取得
+  ? getFirestore(app)
   : initializeFirestore(app, {
-      localCache: persistentLocalCache(), // ローカルキャッシュの設定
-      experimentalForceLongPolling: true, // ネットワークの安定性を確保
-      useFetchStreams: false,
+      localCache: persistentLocalCache({
+        synchronizeTabs: true, // タブ間のキャッシュ同期
+        tabManager: persistentIndexedDbCache(), // IndexedDBキャッシュ
+      }),
+      experimentalAutoDetectLongPolling: true, // 自動でポーリング設定
+      useFetchStreams: true,
     });
 
 export { db };

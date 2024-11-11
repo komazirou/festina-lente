@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig"; // Firebaseの設定ファイルをインポート
 
 export default function WeekScreen({ route }) {
   const { period } = route.params; // 週の番号
@@ -8,13 +10,33 @@ export default function WeekScreen({ route }) {
   const [savedGoal, setSavedGoal] = useState(""); // 保存された目標
   const navigation = useNavigation();
 
-  // ゴールを保存する関数
-  const saveGoal = () => {
-    setSavedGoal(goal);
-    setGoal("");
+  // Firestoreから目標を取得
+  useEffect(() => {
+    const fetchGoal = async () => {
+      const docRef = doc(db, "weeklyGoals", `week-${period}`);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        setSavedGoal(docSnap.data().goal);
+      } else {
+        console.log("No such document!");
+      }
+    };
+
+    fetchGoal();
+  }, [period]);
+
+  // Firestoreに目標を保存する関数
+  const saveGoal = async () => {
+    if (goal.trim()) {
+      const docRef = doc(db, "weeklyGoals", `week-${period}`); // 週番号をドキュメントIDとして使用
+      await setDoc(docRef, { goal });
+      setSavedGoal(goal);
+      setGoal("");
+    }
   };
 
-  // 該当週の日付範囲を計算（例: 1週間目は1-7日、2週間目は8-14日）
+  // 該当週の日付範囲を計算
   const startDay = (period - 1) * 7 + 1;
   const endDay = startDay + 6;
   const daysToShow = Array.from({ length: 7 }, (_, i) => startDay + i);
@@ -44,7 +66,7 @@ export default function WeekScreen({ route }) {
         <Button
           key={day}
           title={`${day}日目`}
-          onPress={() => navigation.navigate(`${day}日目`, {period: day})}
+          onPress={() => navigation.navigate(`${day}日目`, { period: day })}
         />
       ))}
     </ScrollView>

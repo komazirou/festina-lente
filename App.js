@@ -1,11 +1,16 @@
 import "react-native-gesture-handler";
 import * as React from "react";
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem,
+} from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import HomeScreen from "./screens/HomeScreen";
 import MonthScreen from "./screens/MonthScreen";
 import WeekScreen from "./screens/WeekScreen";
 import DayScreen from "./screens/DayScreen";
+import { Text } from "react-native";
 
 const Drawer = createDrawerNavigator();
 
@@ -28,10 +33,71 @@ const dayScreens = Array.from({ length: 90 }, (_, i) => ({
   period: `day${i + 1}`,
 }));
 
+// カスタムDrawerコンテンツ
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItem
+        label="３か月目標"
+        onPress={() => props.navigation.navigate("３か月目標")}
+        labelStyle={{ fontSize: 18, fontWeight: "bold", color: "#007AFF" }}
+      />
+
+      <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
+        月間目標
+      </Text>
+      {monthScreens.map((screen) => (
+        <DrawerItem
+          key={screen.name}
+          label={screen.name}
+          onPress={() => props.navigation.navigate(screen.name)}
+          labelStyle={{ fontSize: 16 }}
+        />
+      ))}
+
+      <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
+        週間目標
+      </Text>
+      {weekScreens.map((screen) => (
+        <DrawerItem
+          key={screen.name}
+          label={screen.name}
+          onPress={() => props.navigation.navigate(screen.name)}
+          labelStyle={{ fontSize: 16 }}
+        />
+      ))}
+
+      <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
+        日間目標
+      </Text>
+      {dayScreens.map((screen) => (
+        <DrawerItem
+          key={screen.name}
+          label={screen.name}
+          onPress={() => props.navigation.navigate(screen.name)}
+          labelStyle={{ fontSize: 14 }}
+        />
+      ))}
+    </DrawerContentScrollView>
+  );
+}
+
 export default function App() {
   return (
     <NavigationContainer>
-      <Drawer.Navigator initialRouteName="３か月目標">
+      <Drawer.Navigator
+        initialRouteName="３か月目標"
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          drawerStyle: {
+            backgroundColor: "#f0f0f0",
+          },
+
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+        }}
+      >
         <Drawer.Screen name="３か月目標" component={HomeScreen} />
 
         {/* 月間目標のスクリーンを動的に生成 */}
