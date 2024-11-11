@@ -23,7 +23,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 
-export default function DailyTaskList() {
+export default function DailyTaskList({period}) {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -48,13 +48,13 @@ export default function DailyTaskList() {
   }, []);
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    fetchTasks(period);
+  }, [period]);
 
   // Firestoreからタスクを取得
-  const fetchTasks = () => {
+  const fetchTasks = (period) => {
     const tasksQuery = query(
-      collection(db, "tasks"),
+      collection(db, `days/${period}/tasks`),
       orderBy("createdAt", "desc")
     );
     onSnapshot(tasksQuery, (snapshot) => {
@@ -67,9 +67,9 @@ export default function DailyTaskList() {
   };
 
   // Firestoreにタスクを追加
-  const addTask = async () => {
+  const addTask = async (period) => {
     if (newTask.trim()) {
-      await addDoc(collection(db, `days/${day}/tasks`), {
+      await addDoc(collection(db, `days/${period}/tasks`), {
         title: newTask,
         completed: false,
         createdAt: serverTimestamp(),
@@ -79,13 +79,13 @@ export default function DailyTaskList() {
   };
 
   // Firestoreでタスクを削除
-  const onDelete = async (taskId) => {
-    await deleteDoc(doc(db, "tasks", taskId));
+  const onDelete = async (taskId, period) => {
+    await deleteDoc(doc(db, `days/${period}/tasks`, taskId));
   };
 
   // タスクの完了状態を切り替え
-  const toggleTaskCompletion = async (taskId, currentStatus) => {
-    await updateDoc(doc(db, "tasks", taskId), {
+  const toggleTaskCompletion = async (taskId, currentStatus, period) => {
+    await updateDoc(doc(db, `days/${period}/tasks`, taskId), {
       completed: !currentStatus,
     });
   };
@@ -97,8 +97,8 @@ export default function DailyTaskList() {
   };
 
   // 編集内容の保存
-  const saveEditing = async (taskId) => {
-    await updateDoc(doc(db, "tasks", taskId), {
+  const saveEditing = async (taskId, period) => {
+    await updateDoc(doc(db, `days/${period}/tasks`, taskId), {
       title: editingText,
     });
     setEditingTaskId(null);
@@ -114,7 +114,7 @@ export default function DailyTaskList() {
   // 削除ボタンの表示
   const renderRightActions = (taskId) => (
     <TouchableOpacity
-      onPress={() => onDelete(taskId)}
+      onPress={() => onDelete(taskId, period)} // periodを渡す
       style={styles.deleteButton}
     >
       <Text style={styles.deleteButtonText}>削除</Text>
@@ -129,9 +129,9 @@ export default function DailyTaskList() {
         placeholder="タスクを入力"
         value={newTask}
         onChangeText={setNewTask}
-        onSubmitEditing={addTask}
+        onSubmitEditing={() => addTask(period)} // ラップして渡す
       />
-      <Button title="追加" onPress={addTask} />
+      <Button title="追加" onPress={() => addTask(period)} /> 
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id}
@@ -139,7 +139,9 @@ export default function DailyTaskList() {
           <Swipeable renderRightActions={() => renderRightActions(item.id)}>
             <View style={styles.taskContainer}>
               <TouchableOpacity
-                onPress={() => toggleTaskCompletion(item.id, item.completed)}
+                onPress={() =>
+                  toggleTaskCompletion(item.id, item.completed, period)
+                }
               >
                 <MaterialIcons
                   name={
@@ -154,7 +156,7 @@ export default function DailyTaskList() {
                   style={styles.input}
                   value={editingText}
                   onChangeText={setEditingText}
-                  onSubmitEditing={() => saveEditing(item.id)}
+                  onSubmitEditing={() => saveEditing(item.id, period)}
                 />
               ) : (
                 <Text
@@ -162,7 +164,9 @@ export default function DailyTaskList() {
                     styles.taskText,
                     item.completed && styles.completedText,
                   ]}
-                  onPress={() => toggleTaskCompletion(item.id, item.completed)}
+                  onPress={() =>
+                    toggleTaskCompletion(item.id, item.completed, period)
+                  }
                 >
                   {item.title}
                 </Text>
