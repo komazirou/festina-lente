@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
@@ -30,10 +31,26 @@ export default function DailyTaskList({ period }) {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [loading, setLoading] = useState(true); // ローディング状態を管理
+  const animatedHeight = useRef(new Animated.Value(0)).current; // アニメーション用の高さ
+
+  const completionRate = tasks.length
+    ? Math.round(
+        (tasks.filter((task) => task.completed).length / tasks.length) * 100
+      )
+    : 0;
+
+  // アニメーションの効果
+  useEffect(() => {
+    Animated.timing(animatedHeight, {
+      toValue: completionRate,
+      duration: 800, // アニメーションの速度
+      useNativeDriver: false,
+    }).start();
+  }, [completionRate]);
 
   // Firestoreからタスクを取得
   useEffect(() => {
-    setLoading(true); // データ取得開始時にローディングを開始
+    setLoading(true);
     const tasksQuery = query(
       collection(db, `days/${period}/tasks`),
       orderBy("createdAt", "desc")
@@ -45,7 +62,7 @@ export default function DailyTaskList({ period }) {
         ...doc.data(),
       }));
       setTasks(fetchedTasks);
-      setLoading(false); // データ取得完了時にローディングを停止
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -90,12 +107,6 @@ export default function DailyTaskList({ period }) {
     setEditingText("");
   };
 
-  const completionRate = tasks.length
-    ? Math.round(
-        (tasks.filter((task) => task.completed).length / tasks.length) * 100
-      )
-    : 0;
-
   // 削除ボタンの表示
   const renderRightActions = (taskId) => (
     <TouchableOpacity
@@ -108,15 +119,23 @@ export default function DailyTaskList({ period }) {
 
   return (
     <View style={styles.container}>
-      <View
+      <Animated.View
         style={[
           styles.dynamicBackground,
           {
-            height: `${completionRate}%`, // 高さを completionRate に応じて変更
-            backgroundColor: "#007AFF",
+            height: animatedHeight.interpolate({
+              inputRange: [0, 100],
+              outputRange: ["0%", "100%"],
+            }),
+            backgroundColor: "#3ca03c", // 濃い緑色
+            opacity: animatedHeight.interpolate({
+              inputRange: [0, 100],
+              outputRange: [0.1, 0.5], // 透明度の変化でグラデーション風に
+            }),
           },
         ]}
       />
+
       <View style={[styles.heightcolor]}>
         <Text style={styles.title}>Score: {completionRate}%</Text>
         <TextInput
@@ -127,7 +146,7 @@ export default function DailyTaskList({ period }) {
           onSubmitEditing={addTask}
         />
         <Button title="追加" onPress={addTask} />
-        {loading ? ( // ローディング中の場合
+        {loading ? (
           <ActivityIndicator
             size="large"
             color="#0074fe"
@@ -135,6 +154,7 @@ export default function DailyTaskList({ period }) {
           />
         ) : (
           <FlatList
+            style={{ height: "75%" }}
             data={tasks}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
@@ -150,7 +170,7 @@ export default function DailyTaskList({ period }) {
                         item.completed ? "check-box" : "check-box-outline-blank"
                       }
                       size={24}
-                      color={"green"}
+                      color={"#3ca03c"}
                     />
                   </TouchableOpacity>
                   {editingTaskId === item.id ? (
@@ -198,21 +218,23 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0, // 下からの高さで調整
+    bottom: 0,
   },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, margin: 20},
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, margin: 20 },
   input: {
     borderColor: "#ccc",
     borderWidth: 1,
     padding: 10,
     marginBottom: 10,
     borderRadius: 5,
-    margin: 10
+    margin: 10,
   },
   loadingIndicator: {
     marginTop: 20,
   },
   taskContainer: {
+    borderRadius: "10%",
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
@@ -220,7 +242,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
     justifyContent: "space-between",
     backgroundColor: "#f8f8f8",
-    margin: 10
+    marginTop: 2,
+    marginBottom: 2,
+    marginLeft: 5,
   },
   taskText: {
     fontSize: 18,
@@ -228,10 +252,13 @@ const styles = StyleSheet.create({
   },
   completedText: { textDecorationLine: "line-through", color: "gray" },
   deleteButton: {
-    backgroundColor: "red",
+    backgroundColor: "#dd003c",
     justifyContent: "center",
     alignItems: "center",
     width: 80,
+    marginTop: 5,
+    marginBottom: 5,
+    borderRadius: "10%",
   },
   deleteButtonText: {
     color: "#fff",

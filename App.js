@@ -16,9 +16,9 @@ const Drawer = createDrawerNavigator();
 
 // 月間目標用スクリーン設定
 const monthScreens = [
-  { name: "1ヶ月目標", period: "4month" },
-  { name: "2ヶ月目標", period: "8month" },
-  { name: "3ヶ月目標", period: "12month" },
+  { name: "1ヶ月目標", period: "1ヶ月目" },
+  { name: "2ヶ月目標", period: "2ヶ月目" },
+  { name: "3ヶ月目標", period: "3ヶ月目" },
 ];
 
 // 週間目標用スクリーン設定
@@ -28,7 +28,7 @@ const weekScreens = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 // 日間目標用スクリーン設定
-const dayScreens = Array.from({ length: 90 }, (_, i) => ({
+const dayScreens = Array.from({ length: 84 }, (_, i) => ({
   name: `${i + 1}日目`,
   period: `day${i + 1}`,
 }));
@@ -64,18 +64,6 @@ function CustomDrawerContent(props) {
           label={screen.name}
           onPress={() => props.navigation.navigate(screen.name)}
           labelStyle={{ fontSize: 16 }}
-        />
-      ))}
-
-      <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
-        日間目標
-      </Text>
-      {dayScreens.map((screen) => (
-        <DrawerItem
-          key={screen.name}
-          label={screen.name}
-          onPress={() => props.navigation.navigate(screen.name)}
-          labelStyle={{ fontSize: 14 }}
         />
       ))}
     </DrawerContentScrollView>

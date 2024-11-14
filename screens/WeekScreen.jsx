@@ -66,7 +66,7 @@ export default function WeekScreen({ route }) {
         <Button
           key={day}
           title={`${day}日目`}
-          onPress={() => navigation.navigate(`${day}日目`, { period: day })}
+          onPress={() => navigation.navigate(`${day}日目`)}
         />
       ))}
     </ScrollView>
