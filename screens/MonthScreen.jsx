@@ -65,7 +65,7 @@ export default function MonthScreen({ route }) {
       {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
-        placeholder="この週の目標を入力"
+        placeholder="今月の目標を入力"
         value={goal}
         onChangeText={setGoal}
       />

@@ -53,7 +53,7 @@ export default function WeekScreen({ route }) {
       {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
-        placeholder="この週の目標を入力"
+        placeholder="今週の目標を入力"
         value={goal}
         onChangeText={setGoal}
       />
