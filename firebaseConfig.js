@@ -4,6 +4,7 @@ import {
   initializeFirestore,
   persistentLocalCache,
   persistentIndexedDbCache,
+  CACHE_SIZE_UNLIMITED,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -24,11 +25,16 @@ const db = getApps().length
   ? getFirestore(app)
   : initializeFirestore(app, {
       localCache: persistentLocalCache({
-        synchronizeTabs: true, // タブ間のキャッシュ同期
-        tabManager: persistentIndexedDbCache(), // IndexedDBキャッシュ
+        synchronizeTabs: true,
+        tabManager: persistentIndexedDbCache({ cacheSizeBytes: CACHE_SIZE_UNLIMITED }),
       }),
-      experimentalAutoDetectLongPolling: true, // 自動でポーリング設定
+      experimentalAutoDetectLongPolling: true,
       useFetchStreams: true,
     });
+
+// 必要に応じてキャッシュクリアのタイミングを設定
+export const clearFirestoreCache = async () => {
+  await db.clearPersistence();
+};
 
 export { db };

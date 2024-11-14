@@ -11,6 +11,7 @@ import MonthScreen from "./screens/MonthScreen";
 import WeekScreen from "./screens/WeekScreen";
 import DayScreen from "./screens/DayScreen";
 import { Text } from "react-native";
+import { DateProvider, useDate } from "./DateProvider"; // DateProviderとuseDateをインポート
 
 const Drawer = createDrawerNavigator();
 
@@ -35,6 +36,29 @@ const dayScreens = Array.from({ length: 84 }, (_, i) => ({
 
 // カスタムDrawerコンテンツ
 function CustomDrawerContent(props) {
+  const { currentDay } = useDate(); // 現在の日数を取得
+
+ // ラベルスタイルを動的に決定する関数
+const getLabelStyle = (type, index) => {
+  // デフォルトのスタイル（目立たない色）
+  let style = { fontSize: 16, color: "#9f9f9f" };
+
+  if (type === "month") {
+    // 現在の月に該当する場合のみ色を変える
+    const currentMonth = Math.ceil(currentDay / 28); // 1ヶ月を28日とする
+    if (currentMonth === index + 1) {
+      style.color = "#007AFF"; // 現在の月を強調
+      style.fontWeight = "bold";
+    }
+  } else if (type === "week" && currentDay > index * 7 && currentDay <= (index + 1) * 7) {
+    // 現在の週のみ色を変える
+    style.color = "#007AFF";
+    style.fontWeight = "bold";
+  }
+  return style;
+};
+
+
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItem
@@ -46,24 +70,24 @@ function CustomDrawerContent(props) {
       <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
         月間目標
       </Text>
-      {monthScreens.map((screen) => (
+      {monthScreens.map((screen, index) => (
         <DrawerItem
           key={screen.name}
           label={screen.name}
           onPress={() => props.navigation.navigate(screen.name)}
-          labelStyle={{ fontSize: 16 }}
+          labelStyle={getLabelStyle("month", index)}
         />
       ))}
 
       <Text style={{ marginLeft: 10, marginVertical: 10, fontWeight: "bold" }}>
         週間目標
       </Text>
-      {weekScreens.map((screen) => (
+      {weekScreens.map((screen, index) => (
         <DrawerItem
           key={screen.name}
           label={screen.name}
           onPress={() => props.navigation.navigate(screen.name)}
-          labelStyle={{ fontSize: 16 }}
+          labelStyle={getLabelStyle("week", index)}
         />
       ))}
     </DrawerContentScrollView>
@@ -72,52 +96,53 @@ function CustomDrawerContent(props) {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        initialRouteName="３か月目標"
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          drawerStyle: {
-            backgroundColor: "#f0f0f0",
-          },
+    <DateProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          initialRouteName="３か月目標"
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{
+            drawerStyle: {
+              backgroundColor: "#f0f0f0",
+            },
+            headerTitleStyle: {
+              fontWeight: "bold",
+            },
+          }}
+        >
+          <Drawer.Screen name="３か月目標" component={HomeScreen} />
 
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-      >
-        <Drawer.Screen name="３か月目標" component={HomeScreen} />
+          {/* 月間目標のスクリーンを動的に生成 */}
+          {monthScreens.map((screen) => (
+            <Drawer.Screen
+              key={screen.name}
+              name={screen.name}
+              component={MonthScreen}
+              initialParams={{ period: screen.period }}
+            />
+          ))}
 
-        {/* 月間目標のスクリーンを動的に生成 */}
-        {monthScreens.map((screen) => (
-          <Drawer.Screen
-            key={screen.name}
-            name={screen.name}
-            component={MonthScreen}
-            initialParams={{ period: screen.period }}
-          />
-        ))}
+          {/* 週間目標のスクリーンを動的に生成 */}
+          {weekScreens.map((screen) => (
+            <Drawer.Screen
+              key={screen.name}
+              name={screen.name}
+              component={WeekScreen}
+              initialParams={{ period: screen.period }}
+            />
+          ))}
 
-        {/* 週間目標のスクリーンを動的に生成 */}
-        {weekScreens.map((screen) => (
-          <Drawer.Screen
-            key={screen.name}
-            name={screen.name}
-            component={WeekScreen}
-            initialParams={{ period: screen.period }}
-          />
-        ))}
-
-        {/* 日間目標のスクリーンを動的に生成 */}
-        {dayScreens.map((screen) => (
-          <Drawer.Screen
-            key={screen.name}
-            name={screen.name}
-            component={DayScreen}
-            initialParams={{ period: screen.period }}
-          />
-        ))}
-      </Drawer.Navigator>
-    </NavigationContainer>
+          {/* 日間目標のスクリーンを動的に生成 */}
+          {dayScreens.map((screen) => (
+            <Drawer.Screen
+              key={screen.name}
+              name={screen.name}
+              component={DayScreen}
+              initialParams={{ period: screen.period }}
+            />
+          ))}
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </DateProvider>
   );
 }

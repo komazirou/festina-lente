@@ -1,18 +1,19 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { TextInput } from "react-native-gesture-handler";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig"; // Firebaseの設定ファイルをインポート
+import { db } from "../firebaseConfig";
+import { useDate } from "../DateProvider"; 
 
 export default function MonthScreen({ route }) {
   const { period } = route.params;
   const navigation = useNavigation();
-  const [goal, setGoal] = useState(""); // 入力中の目標
-  const [savedGoal, setSavedGoal] = useState(""); // 保存された目標
+  const [goal, setGoal] = useState(""); 
+  const [savedGoal, setSavedGoal] = useState(""); 
+  const { currentDay } = useDate();
 
-  // 週のリストを生成 (1-4、5-8、9-12)
   const weekRanges = {
     "1ヶ月目": [1, 4],
     "2ヶ月目": [5, 8],
@@ -20,14 +21,10 @@ export default function MonthScreen({ route }) {
   };
 
   const [startWeek, endWeek] = weekRanges[period];
-  const weeksToShow = Array.from(
-    { length: endWeek - startWeek + 1 },
-    (_, i) => ({
-      week: startWeek + i,
-    })
-  );
+  const weeksToShow = Array.from({ length: endWeek - startWeek + 1 }, (_, i) => ({
+    week: startWeek + i,
+  }));
 
-  // Firestoreから目標を取得
   useEffect(() => {
     const fetchGoal = async () => {
       const docRef = doc(db, "monthlyGoals", `month-${period}`);
@@ -43,26 +40,31 @@ export default function MonthScreen({ route }) {
     fetchGoal();
   }, [period]);
 
-  // Firestoreに目標を保存する関数
   const saveGoal = async () => {
     if (goal.trim()) {
-      const docRef = doc(db, "monthlyGoals", `month-${period}`); // 週番号をドキュメントIDとして使用
+      const docRef = doc(db, "monthlyGoals", `month-${period}`);
       await setDoc(docRef, { goal });
       setSavedGoal(goal);
       setGoal("");
     }
   };
 
+  const getButtonStyle = (week) => {
+    const weekStartDay = (week - 1) * 7 + 1;
+    const weekEndDay = week * 7;
+    return currentDay >= weekStartDay && currentDay <= weekEndDay
+      ? styles.activeWeekButton
+      : styles.defaultButton;
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{period}の目標</Text>
 
-      {/* 保存された目標を表示 */}
       <Text style={styles.goalText}>
         {savedGoal ? `目標: ${savedGoal}` : "目標を入力してください"}
       </Text>
 
-      {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
         placeholder="今月の目標を入力"
@@ -70,15 +72,18 @@ export default function MonthScreen({ route }) {
         onChangeText={setGoal}
       />
 
-      {/* 目標を保存するボタン */}
-      <Button title="目標を保存" onPress={saveGoal} />
+      <TouchableOpacity style={styles.saveButton} onPress={saveGoal}>
+        <Text style={styles.saveButtonText}>目標を保存</Text>
+      </TouchableOpacity>
 
       {weeksToShow.map((item) => (
-        <Button
+        <TouchableOpacity
           key={item.week}
-          title={`${item.week}週間目標`}
+          style={[styles.buttonContainer, getButtonStyle(item.week)]}
           onPress={() => navigation.navigate(`${item.week}週間目標`)}
-        />
+        >
+          <Text style={styles.buttonText}>{`${item.week}週間目標`}</Text>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -95,11 +100,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
   input: {
     borderColor: "#ccc",
     borderWidth: 1,
@@ -113,5 +113,34 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
     marginBottom: 15,
+  },
+  saveButton: {
+    backgroundColor: "#3ca03c",
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 10,
+    width: 250,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    width: 250,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+    alignItems: "center",
+  },
+  defaultButton: {
+    backgroundColor: "#9f9f9f",
+  },
+  activeWeekButton: {
+    backgroundColor: "#007AFF",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

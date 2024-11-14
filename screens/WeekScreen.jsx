@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
+import {
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  View,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig"; // Firebaseの設定ファイルをインポート
+import { db } from "../firebaseConfig";
+import { useDate } from "../DateProvider";
 
 export default function WeekScreen({ route }) {
   const { period } = route.params; // 週の番号
   const [goal, setGoal] = useState(""); // 入力中の目標
   const [savedGoal, setSavedGoal] = useState(""); // 保存された目標
   const navigation = useNavigation();
+  const { currentDay } = useDate(); // 現在の日数を取得
 
-  // Firestoreから目標を取得
   useEffect(() => {
     const fetchGoal = async () => {
       const docRef = doc(db, "weeklyGoals", `week-${period}`);
@@ -26,31 +34,31 @@ export default function WeekScreen({ route }) {
     fetchGoal();
   }, [period]);
 
-  // Firestoreに目標を保存する関数
   const saveGoal = async () => {
     if (goal.trim()) {
-      const docRef = doc(db, "weeklyGoals", `week-${period}`); // 週番号をドキュメントIDとして使用
+      const docRef = doc(db, "weeklyGoals", `week-${period}`);
       await setDoc(docRef, { goal });
       setSavedGoal(goal);
       setGoal("");
     }
   };
 
-  // 該当週の日付範囲を計算
   const startDay = (period - 1) * 7 + 1;
   const endDay = startDay + 6;
   const daysToShow = Array.from({ length: 7 }, (_, i) => startDay + i);
+
+  const getButtonStyle = (day) => {
+    return currentDay === day ? styles.activeDayButton : styles.defaultButton;
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{period}週間目の目標</Text>
 
-      {/* 保存された目標を表示 */}
       <Text style={styles.goalText}>
         {savedGoal ? `目標: ${savedGoal}` : "目標を入力してください"}
       </Text>
 
-      {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
         placeholder="今週の目標を入力"
@@ -58,16 +66,18 @@ export default function WeekScreen({ route }) {
         onChangeText={setGoal}
       />
 
-      {/* 目標を保存するボタン */}
-      <Button title="目標を保存" onPress={saveGoal} />
+      <TouchableOpacity style={styles.saveButton} onPress={saveGoal}>
+        <Text style={styles.saveButtonText}>目標を保存</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.subtitle}>日別目標</Text>
       {daysToShow.map((day) => (
-        <Button
+        <TouchableOpacity
           key={day}
-          title={`${day}日目`}
+          style={[styles.buttonContainer, getButtonStyle(day)]}
           onPress={() => navigation.navigate(`${day}日目`)}
-        />
+        >
+          <Text style={styles.buttonText}>{`${day}日目`}</Text>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -85,11 +95,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
   input: {
     borderColor: "#ccc",
     borderWidth: 1,
@@ -103,5 +108,34 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
     marginBottom: 15,
+  },
+  saveButton: {
+    backgroundColor: "#3ca03c",
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 10,
+    width: 250,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    width: 250,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+    alignItems: "center",
+  },
+  defaultButton: {
+    backgroundColor: "#9f9f9f",
+  },
+  activeDayButton: {
+    backgroundColor: "#007AFF",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

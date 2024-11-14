@@ -1,85 +1,28 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "../firebaseConfig";
-import { TextInput } from "react-native-gesture-handler";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { TextInput } from "react-native-gesture-handler";
+import { useDate } from "../DateProvider";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const [goal, setGoal] = useState(""); // 入力中の目標
-  const [savedGoal, setSavedGoal] = useState(""); // 保存された目標
-  const [startDate, setStartDate] = useState(null); // 開始日
-  const [savedStartDate, setSavedStartDate] = useState(null); // 保存された開始日
-  const [showDatePicker, setShowDatePicker] = useState(false); // DatePickerの表示
-  const [currentDay, setCurrentDay] = useState(0); // 現在の日数
-  const [endDate, setEndDate] = useState(null); // 84日目の日付
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Firestoreから目標と開始日を取得
-  useEffect(() => {
-    const fetchData = async () => {
-      const docRef = doc(db, "Goal", "goal");
-      const docSnap = await getDoc(docRef);
+  const {
+    startDate,
+    currentDay,
+    endDate,
+    goal,
+    savedGoal,
+    saveStartDate,
+    saveGoal,
+    setInputGoal,
+    inputGoal,
+  } = useDate();
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setSavedGoal(data.goal);
-        if (data.startDate) {
-          const start = data.startDate.toDate();
-          setSavedStartDate(start);
-          setStartDate(start);
-        }
-      } else {
-        console.log("No such document!");
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Firestoreに開始日を保存する関数
-  const saveStartDate = async (selectedDate) => {
-    if (selectedDate) {
-      const docRef = doc(db, "Goal", "goal");
-      await setDoc(docRef, { startDate: Timestamp.fromDate(selectedDate) }, { merge: true });
-      setSavedStartDate(selectedDate);
-      console.log("開始日が保存されました");
-    } else {
-      console.log("開始日が選択されていません");
-    }
-  };
-
-  // Firestoreに目標を保存する関数
-  const saveGoal = async () => {
-    if (goal.trim()) {
-      const docRef = doc(db, "Goal", "goal");
-      await setDoc(docRef, { goal }, { merge: true });
-      setSavedGoal(goal);
-      setGoal("");
-      console.log("目標が保存されました");
-    } else {
-      console.log("目標が入力されていません");
-    }
-  };
-
-  // 開始日が設定されたときに日数を計算
-  useEffect(() => {
-    if (savedStartDate) {
-      const today = new Date();
-      const diffInTime = today.getTime() - savedStartDate.getTime();
-      const diffInDays = Math.floor(diffInTime / (1000 * 3600 * 24)) + 1; // 1日目から開始
-      setCurrentDay(diffInDays <= 84 ? diffInDays : 84); // 最大84日目まで表示
-
-      // 84日後の日付を計算して設定
-      const calculatedEndDate = new Date(savedStartDate);
-      calculatedEndDate.setDate(calculatedEndDate.getDate() + 83); // 開始日から83日後が84日目
-      setEndDate(calculatedEndDate);
-    }
-  }, [savedStartDate]);
-
-  // 各月のボタン色を切り替えるスタイル関数
   const getButtonStyle = (month) => {
     if (month === 1 && currentDay >= 1 && currentDay <= 28) {
       return styles.firstMonthButton;
@@ -94,7 +37,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* 開始日を選択するボタン */}
-      <Button title="開始日を選択" onPress={() => setShowDatePicker(true)} />
+      <MaterialIcons
+        name="date-range"
+        size={24}
+        color="#007AFF"
+        onPress={() => setShowDatePicker(true)}
+      />
 
       {/* DatePickerを表示 */}
       {showDatePicker && (
@@ -105,8 +53,7 @@ export default function HomeScreen() {
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
             if (selectedDate) {
-              setStartDate(selectedDate);
-              saveStartDate(selectedDate); // 日付選択時に自動保存
+              saveStartDate(selectedDate);
             }
           }}
         />
@@ -114,52 +61,65 @@ export default function HomeScreen() {
 
       {/* 現在の経過日数を表示 */}
       <Text style={styles.goalText}>
-        {savedStartDate
+        {startDate
           ? `開始日から${currentDay}日目です`
           : "開始日を設定してください"}
       </Text>
 
       {/* 開始日と終了日の範囲表示 */}
-      {savedStartDate && endDate && (
+      {startDate && endDate && (
         <Text style={styles.goalText}>
-          {savedStartDate.toLocaleDateString()} 〜 {endDate.toLocaleDateString()}
+          {startDate.toLocaleDateString()} 〜 {endDate.toLocaleDateString()}
         </Text>
       )}
 
       <Text style={styles.title}>3ヶ月目標</Text>
 
       {/* 保存された目標を表示 */}
-      <Text style={styles.goalText}>
-        {savedGoal ? `目標: ${savedGoal}` : "目標を入力してください"}
-      </Text>
+      <View style={styles.goalContainer}>
+        <MaterialIcons name="flag" size={24} color="#FFD700" />
+        <Text style={styles.goalText}>
+          {savedGoal ? `: ${savedGoal}` : "目標を入力してください"}
+        </Text>
+      </View>
 
       {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
         placeholder="この週の目標を入力"
-        value={goal}
-        onChangeText={setGoal}
+        value={inputGoal}
+        onChangeText={setInputGoal}
       />
 
       {/* 目標を保存するボタン */}
-      <Button title="目標を保存" onPress={saveGoal} />
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={() => saveGoal(inputGoal)}
+      >
+        <Text style={styles.buttonText}>目標を保存</Text>
+      </TouchableOpacity>
 
       {/* 各月目標へのナビゲーションボタン */}
-      <Button
-        title="1ヶ月目標へ"
+      <TouchableOpacity
+        style={getButtonStyle(1)}
         onPress={() => navigation.navigate("1ヶ月目標")}
-        color={getButtonStyle(1).backgroundColor}
-      />
-      <Button
-        title="2ヶ月目標へ"
+      >
+        <Text style={styles.buttonText}>1ヶ月目標へ</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={getButtonStyle(2)}
         onPress={() => navigation.navigate("2ヶ月目標")}
-        color={getButtonStyle(2).backgroundColor}
-      />
-      <Button
-        title="3ヶ月目標へ"
+      >
+        <Text style={styles.buttonText}>2ヶ月目標へ</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={getButtonStyle(3)}
         onPress={() => navigation.navigate("3ヶ月目標")}
-        color={getButtonStyle(3).backgroundColor}
-      />
+      >
+        <Text style={styles.buttonText}>3ヶ月目標へ</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -184,21 +144,63 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
+  goalContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
   goalText: {
     fontSize: 18,
     color: "#333",
-    marginBottom: 15,
+    marginLeft: 8, // アイコンとテキストの間にスペース
+  },
+  saveButton: {
+    backgroundColor: "#3ca03c",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    width: "80%",
+    alignItems: "center",
   },
   defaultButton: {
-    backgroundColor: "#9f9f9f", // デフォルトのボタン色
+    backgroundColor: "#9f9f9f",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    width: "80%",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   firstMonthButton: {
-    backgroundColor: "#007AFF", // 1ヶ月目のボタン色
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    width: "80%",
+    alignItems: "center",
   },
   secondMonthButton: {
-    backgroundColor: "#007AFF", // 2ヶ月目のボタン色
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    width: "80%",
+    alignItems: "center",
   },
   thirdMonthButton: {
-    backgroundColor: "#007AFF", // 3ヶ月目のボタン色
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    width: "80%",
+    alignItems: "center",
   },
 });
