@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useDate } from "../DateProvider";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function WeekScreen({ route }) {
   const { period } = route.params; // 週の番号
@@ -53,7 +54,9 @@ export default function WeekScreen({ route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{period}週間目の目標</Text>
+      <Text style={styles.title}>
+        <MaterialIcons name="hiking" size={90} color="#FFD700" />
+      </Text>
 
       <Text style={styles.goalText}>
         {savedGoal ? `目標: ${savedGoal}` : "目標を入力してください"}
@@ -89,53 +92,62 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    backgroundColor: "#f8f9fa", // 背景色
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
-  },
-  input: {
-    borderColor: "#ccc",
-    borderWidth: 1,
-    padding: 8,
-    width: 250,
-    marginTop: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    color: "#333",
+    marginBottom: 15,
   },
   goalText: {
     fontSize: 18,
     color: "#333",
+    textAlign: "center",
+    backgroundColor: "#FFF8E1", // 目標表示部分の背景色
+    padding: 10,
+    borderRadius: 10,
+    width: "100%",
     marginBottom: 15,
   },
-  saveButton: {
-    backgroundColor: "#3ca03c",
+  input: {
+    borderColor: "#ccc",
+    borderWidth: 1,
     padding: 10,
-    borderRadius: 5,
-    marginVertical: 10,
-    width: 250,
+    width: "100%",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+  },
+  saveButton: {
+    backgroundColor: "#28a745", // 成功を示す緑色
+    paddingVertical: 12,
+    borderRadius: 10,
+    width: "100%",
     alignItems: "center",
+    marginBottom: 15,
   },
   saveButtonText: {
     color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
   buttonContainer: {
-    width: 250,
-    paddingVertical: 10,
-    borderRadius: 5,
+    width: "100%",
+    paddingVertical: 12,
+    borderRadius: 10,
     marginVertical: 5,
     alignItems: "center",
   },
   defaultButton: {
-    backgroundColor: "#9f9f9f",
+    backgroundColor: "#9f9f9f", // 灰色
   },
   activeDayButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#007AFF", // アクティブ状態の青色
   },
   buttonText: {
     color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

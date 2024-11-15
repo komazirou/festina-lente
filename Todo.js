@@ -145,7 +145,13 @@ export default function DailyTaskList({ period }) {
           onChangeText={setNewTask}
           onSubmitEditing={addTask}
         />
-        <Button title="追加" onPress={addTask} />
+        <View style={styles.addButtonContainer}>
+          <TouchableOpacity style={styles.addButton} onPress={addTask}>
+            <MaterialIcons name="add" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>追加</Text>
+          </TouchableOpacity>
+        </View>
+
         {loading ? (
           <ActivityIndicator
             size="large"
@@ -213,55 +219,125 @@ export default function DailyTaskList({ period }) {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#f8f8f8", height: "100%" },
+  container: {
+    backgroundColor: "#f2f2f2", // 背景色を柔らかいグレーに
+    height: "100%",
+    paddingHorizontal: 15,
+  },
   dynamicBackground: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
   },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, margin: 20 },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginVertical: 15,
+    textAlign: "center",
+    color: "#333",
+  },
   input: {
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderWidth: 1,
-    padding: 10,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#fff",
     marginBottom: 10,
-    borderRadius: 5,
-    margin: 10,
   },
   loadingIndicator: {
     marginTop: 20,
   },
   taskContainer: {
-    borderRadius: "10%",
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#ffffff", // カードスタイル
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    justifyContent: "space-between",
-    backgroundColor: "#f8f8f8",
-    marginTop: 2,
-    marginBottom: 2,
-    marginLeft: 5,
+    marginVertical: 5,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2, // Android用影
   },
   taskText: {
-    fontSize: 18,
+    fontSize: 16,
+    flex: 1,
     marginLeft: 10,
+    color: "#333",
   },
-  completedText: { textDecorationLine: "line-through", color: "gray" },
+  completedText: {
+    textDecorationLine: "line-through",
+    color: "#aaa",
+  },
   deleteButton: {
-    backgroundColor: "#dd003c",
+    backgroundColor: "#dd003c", // 削除ボタンの色
     justifyContent: "center",
     alignItems: "center",
     width: 80,
-    marginTop: 2,
-    marginBottom: 2,
-    borderRadius: "10%",
+    borderRadius: 8,
   },
   deleteButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  saveButton: {
+    backgroundColor: "#28a745", // 保存ボタンの色
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  activeDayButton: {
+    backgroundColor: "#007AFF", // アクティブなボタンの色
+    borderRadius: 10,
+    marginVertical: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: "center",
+  },
+  defaultButton: {
+    backgroundColor: "#ddd", // デフォルトのボタンの色
+    borderRadius: 10,
+    marginVertical: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  addButtonContainer: {
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#007AFF", // アクセントカラー
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25, // 丸みを追加
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3, // Android用影
+    width: "80%",
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 10, // アイコンとテキストの間隔
   },
 });

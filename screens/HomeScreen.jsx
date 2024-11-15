@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { TextInput } from "react-native-gesture-handler";
@@ -35,58 +35,54 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       {/* 開始日を選択するボタン */}
-      <MaterialIcons
-        name="date-range"
-        size={24}
-        color="#007AFF"
-        onPress={() => setShowDatePicker(true)}
-      />
+      <View style={styles.section}>
+        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+          <MaterialIcons name="date-range" size={30} color="#007AFF" />
+          <Text style={styles.dateText}>
+            {startDate ? `開始日から${currentDay}日目です` : "開始日を設定してください"}
+          </Text>
+        </TouchableOpacity>
 
-      {/* DatePickerを表示 */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={startDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) {
-              saveStartDate(selectedDate);
-            }
-          }}
-        />
-      )}
-
-      {/* 現在の経過日数を表示 */}
-      <Text style={styles.goalText}>
-        {startDate
-          ? `開始日から${currentDay}日目です`
-          : "開始日を設定してください"}
-      </Text>
+        {showDatePicker && (
+          <DateTimePicker
+            value={startDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(false);
+              if (selectedDate) {
+                saveStartDate(selectedDate);
+              }
+            }}
+          />
+        )}
+      </View>
 
       {/* 開始日と終了日の範囲表示 */}
       {startDate && endDate && (
-        <Text style={styles.goalText}>
+        <Text style={styles.dateRangeText}>
           {startDate.toLocaleDateString()} 〜 {endDate.toLocaleDateString()}
         </Text>
       )}
 
-      <Text style={styles.title}>3ヶ月目標</Text>
+      {/* 目標アイコン */}
+      <Text style={styles.title}>
+        <MaterialIcons name="flag-circle" size={70} color="#FFD700" />
+      </Text>
 
       {/* 保存された目標を表示 */}
       <View style={styles.goalContainer}>
-        <MaterialIcons name="flag" size={24} color="#FFD700" />
         <Text style={styles.goalText}>
-          {savedGoal ? `: ${savedGoal}` : "目標を入力してください"}
+          {savedGoal ? `目標 : ${savedGoal}` : "目標を入力してください"}
         </Text>
       </View>
 
       {/* 目標を入力するフィールド */}
       <TextInput
         style={styles.input}
-        placeholder="この週の目標を入力"
+        placeholder="目標を入力"
         value={inputGoal}
         onChangeText={setInputGoal}
       />
@@ -100,76 +96,96 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {/* 各月目標へのナビゲーションボタン */}
-      <TouchableOpacity
-        style={getButtonStyle(1)}
-        onPress={() => navigation.navigate("1ヶ月目標")}
-      >
-        <Text style={styles.buttonText}>1ヶ月目標へ</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonGroup}>
+        <TouchableOpacity
+          style={getButtonStyle(1)}
+          onPress={() => navigation.navigate("1ヶ月目標")}
+        >
+          <Text style={styles.buttonText}>1ヶ月目標へ</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={getButtonStyle(2)}
-        onPress={() => navigation.navigate("2ヶ月目標")}
-      >
-        <Text style={styles.buttonText}>2ヶ月目標へ</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={getButtonStyle(2)}
+          onPress={() => navigation.navigate("2ヶ月目標")}
+        >
+          <Text style={styles.buttonText}>2ヶ月目標へ</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={getButtonStyle(3)}
-        onPress={() => navigation.navigate("3ヶ月目標")}
-      >
-        <Text style={styles.buttonText}>3ヶ月目標へ</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={getButtonStyle(3)}
+          onPress={() => navigation.navigate("3ヶ月目標")}
+        >
+          <Text style={styles.buttonText}>3ヶ月目標へ</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: "center",
-    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#f8f9fa",
+  },
+  section: {
+    marginVertical: 10,
+    alignItems: "center",
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginVertical: 15,
+  },
+  dateText: {
+    fontSize: 18,
+    color: "#007AFF",
+    textAlign: "center",
+    marginTop: 5,
+  },
+  dateRangeText: {
+    fontSize: 16,
+    color: "#333",
+    marginVertical: 5,
+    textAlign: "center",
   },
   input: {
     borderColor: "#ccc",
     borderWidth: 1,
     padding: 8,
-    width: 250,
-    marginTop: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    width: "100%",
+    marginVertical: 10,
+    borderRadius: 10,
   },
   goalContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#FFF8E1",
+    padding: 10,
+    borderRadius: 8,
     marginVertical: 10,
+    width: "100%",
+    alignItems: "center",
   },
   goalText: {
     fontSize: 18,
     color: "#333",
-    marginLeft: 8, // アイコンとテキストの間にスペース
   },
   saveButton: {
-    backgroundColor: "#3ca03c",
-    paddingVertical: 10,
+    backgroundColor: "#28a745",
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 10,
     marginVertical: 8,
-    width: "80%",
+    width: "100%",
     alignItems: "center",
   },
   defaultButton: {
     backgroundColor: "#9f9f9f",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "80%",
+    borderRadius: 10,
+    marginVertical: 5,
+    width: "100%",
     alignItems: "center",
   },
   buttonText: {
@@ -178,29 +194,33 @@ const styles = StyleSheet.create({
   },
   firstMonthButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "80%",
+    borderRadius: 10,
+    marginVertical: 5,
+    width: "100%",
     alignItems: "center",
   },
   secondMonthButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "80%",
+    borderRadius: 10,
+    marginVertical: 5,
+    width: "100%",
     alignItems: "center",
   },
   thirdMonthButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "80%",
+    borderRadius: 10,
+    marginVertical: 5,
+    width: "100%",
     alignItems: "center",
+  },
+  buttonGroup: {
+    width: "100%",
+    marginTop: 15,
   },
 });
