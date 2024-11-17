@@ -1,7 +1,7 @@
 // DateContext.js
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { db, auth } from "./firebaseConfig";
 
 const DateContext = createContext();
 
@@ -13,51 +13,72 @@ export function DateProvider({ children }) {
   const [savedGoal, setSavedGoal] = useState(""); // 保存された目標
   const [inputGoal, setInputGoal] = useState(""); // 入力用の目標
   // Firestoreから開始日と目標を取得
+  // ユーザーデータを取得
   useEffect(() => {
     const fetchData = async () => {
-      const docRef = doc(db, "Goal", "goal");
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("ユーザーがログインしていません");
+        return;
+      }
+
+      const uid = user.uid;
+      const docRef = doc(db, "goal", uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
         setSavedGoal(data.goal || "");
         if (data.startDate) {
-          const start = data.startDate.toDate();
+          const start = new Date(data.startDate);
           setStartDate(start);
           calculateDays(start);
         }
       } else {
-        console.log("No such document!");
+        console.log("データが見つかりません");
       }
     };
+
     fetchData();
   }, []);
 
-  // 開始日をFirestoreに保存
+  // 開始日を保存
   const saveStartDate = async (selectedDate) => {
-    if (selectedDate) {
-      const docRef = doc(db, "Goal", "goal");
-      await setDoc(
-        docRef,
-        { startDate: Timestamp.fromDate(selectedDate) },
-        { merge: true }
-      );
-      setStartDate(selectedDate);
-      calculateDays(selectedDate);
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
     }
+
+    const uid = user.uid;
+    const docRef = doc(db, "goal", uid);
+
+    await setDoc(
+      docRef,
+      { startDate: selectedDate.toISOString() },
+      { merge: true }
+    );
+    setStartDate(selectedDate);
+    calculateDays(selectedDate);
   };
 
-  // 目標をFirestoreに保存
+  // 目標を保存
   const saveGoal = async (newGoal) => {
-    if (newGoal.trim()) {
-      const docRef = doc(db, "Goal", "goal");
-      await setDoc(docRef, { goal: newGoal }, { merge: true });
-      setSavedGoal(newGoal);
-      setInputGoal("");
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
     }
+
+    const uid = user.uid;
+    const docRef = doc(db, "goal", uid);
+
+    await setDoc(docRef, { goal: newGoal }, { merge: true });
+    setSavedGoal(newGoal);
+    setInputGoal("");
   };
 
-  // 経過日数と終了日を計算
+  // 日数を計算
   const calculateDays = (date) => {
     const today = new Date();
     const diffInDays = Math.floor((today - date) / (1000 * 3600 * 24)) + 1;

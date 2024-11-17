@@ -6,6 +6,8 @@ import {
   persistentIndexedDbCache,
   CACHE_SIZE_UNLIMITED,
 } from "firebase/firestore";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDF7n2EB4w_SnOGWUb6puRcHIL8yxcvvkU",
@@ -20,13 +22,19 @@ const firebaseConfig = {
 // Firebase アプリの初期化
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
+
 // Firestore のインスタンスの取得または初期化、キャッシュ設定を使用
 const db = getApps().length
   ? getFirestore(app)
   : initializeFirestore(app, {
       localCache: persistentLocalCache({
         synchronizeTabs: true,
-        tabManager: persistentIndexedDbCache({ cacheSizeBytes: CACHE_SIZE_UNLIMITED }),
+        tabManager: persistentIndexedDbCache({
+          cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+        }),
       }),
       experimentalAutoDetectLongPolling: true,
       useFetchStreams: true,
@@ -37,4 +45,4 @@ export const clearFirestoreCache = async () => {
   await db.clearPersistence();
 };
 
-export { db };
+export { db, auth };

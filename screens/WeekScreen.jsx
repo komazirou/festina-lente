@@ -5,11 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig"; // auth をインポート
 import { useDate } from "../DateProvider";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -22,13 +21,20 @@ export default function WeekScreen({ route }) {
 
   useEffect(() => {
     const fetchGoal = async () => {
-      const docRef = doc(db, "weeklyGoals", `week-${period}`);
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("ユーザーがログインしていません");
+        return;
+      }
+
+      const uid = user.uid; // ユーザーのUIDを取得
+      const docRef = doc(db, "weeklyGoals", uid, "weeks", `week-${period}`); // ユーザーごとのパスに変更
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         setSavedGoal(docSnap.data().goal);
       } else {
-        console.log("No such document!");
+        console.log("データが見つかりません");
       }
     };
 
@@ -36,16 +42,28 @@ export default function WeekScreen({ route }) {
   }, [period]);
 
   const saveGoal = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid; // ユーザーのUIDを取得
+    const docRef = doc(db, "weeklyGoals", uid, "weeks", `week-${period}`); // ユーザーごとのパスに変更
+
     if (goal.trim()) {
-      const docRef = doc(db, "weeklyGoals", `week-${period}`);
-      await setDoc(docRef, { goal });
-      setSavedGoal(goal);
-      setGoal("");
+      try {
+        await setDoc(docRef, { goal }, { merge: true }); // 目標を保存
+        setSavedGoal(goal);
+        setGoal("");
+        console.log("目標が保存されました");
+      } catch (error) {
+        console.error("目標の保存中にエラーが発生しました:", error);
+      }
     }
   };
 
   const startDay = (period - 1) * 7 + 1;
-  const endDay = startDay + 6;
   const daysToShow = Array.from({ length: 7 }, (_, i) => startDay + i);
 
   const getButtonStyle = (day) => {

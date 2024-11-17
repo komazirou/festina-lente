@@ -12,7 +12,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { db, auth } from "./firebaseConfig"; // auth をインポート
 
 import TaskInput from "./components/TaskInput";
 import TaskItem from "./components/TaskItem";
@@ -24,6 +24,7 @@ export default function DailyTaskList({ period }) {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingText, setEditingText] = useState("");
   const [loading, setLoading] = useState(true);
+
   const completionRate = tasks.length
     ? Math.round(
         (tasks.filter((task) => task.completed).length / tasks.length) * 100
@@ -31,9 +32,17 @@ export default function DailyTaskList({ period }) {
     : 0;
 
   useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid; // ユーザーの UID を取得
+
     setLoading(true);
     const tasksQuery = query(
-      collection(db, `days/${period}/tasks`),
+      collection(db, `users/${uid}/days/${period}/tasks`), // ユーザーごとのパスに変更
       orderBy("createdAt", "desc")
     );
 
@@ -50,24 +59,60 @@ export default function DailyTaskList({ period }) {
   }, [period]);
 
   const addTask = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid; // UID を取得
+
     if (newTask.trim()) {
-      await addDoc(collection(db, `days/${period}/tasks`), {
-        title: newTask,
-        completed: false,
-        createdAt: serverTimestamp(),
-      });
-      setNewTask("");
+      try {
+        await addDoc(collection(db, `users/${uid}/days/${period}/tasks`), {
+          title: newTask,
+          completed: false,
+          createdAt: serverTimestamp(),
+        });
+        setNewTask("");
+      } catch (error) {
+        console.error("タスクの保存中にエラーが発生しました:", error);
+      }
     }
   };
 
   const onDelete = async (taskId) => {
-    await deleteDoc(doc(db, `days/${period}/tasks`, taskId));
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid;
+
+    try {
+      await deleteDoc(doc(db, `users/${uid}/days/${period}/tasks`, taskId));
+    } catch (error) {
+      console.error("タスクの削除中にエラーが発生しました:", error);
+    }
   };
 
   const toggleTaskCompletion = async (taskId, currentStatus) => {
-    await updateDoc(doc(db, `days/${period}/tasks`, taskId), {
-      completed: !currentStatus,
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid;
+
+    try {
+      await updateDoc(doc(db, `users/${uid}/days/${period}/tasks`, taskId), {
+        completed: !currentStatus,
+      });
+    } catch (error) {
+      console.error("タスクの更新中にエラーが発生しました:", error);
+    }
   };
 
   const startEditing = (task) => {
@@ -77,12 +122,24 @@ export default function DailyTaskList({ period }) {
   };
 
   const saveEditing = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid;
+
     if (newTask.trim() && editingTaskId) {
-      await updateDoc(doc(db, `days/${period}/tasks`, editingTaskId), {
-        title: newTask,
-      });
-      setEditingTaskId(null);
-      setNewTask("");
+      try {
+        await updateDoc(doc(db, `users/${uid}/days/${period}/tasks`, editingTaskId), {
+          title: newTask,
+        });
+        setEditingTaskId(null);
+        setNewTask("");
+      } catch (error) {
+        console.error("タスクの編集保存中にエラーが発生しました:", error);
+      }
     }
   };
 
@@ -96,7 +153,6 @@ export default function DailyTaskList({ period }) {
         completionRate={completionRate}
         isEditing={editingTaskId !== null}
         saveEditing={saveEditing}
-        
       />
       {loading ? (
         <ActivityIndicator

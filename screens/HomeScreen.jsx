@@ -1,6 +1,12 @@
 import * as React from "react";
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { TextInput } from "react-native-gesture-handler";
@@ -15,7 +21,6 @@ export default function HomeScreen() {
     startDate,
     currentDay,
     endDate,
-    goal,
     savedGoal,
     saveStartDate,
     saveGoal,
@@ -41,7 +46,9 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={() => setShowDatePicker(true)}>
           <MaterialIcons name="date-range" size={30} color="#007AFF" />
           <Text style={styles.dateText}>
-            {startDate ? `開始日から${currentDay}日目です` : "開始日を設定してください"}
+            {startDate
+              ? `開始日から${currentDay}日目です`
+              : "開始日を設定してください"}
           </Text>
         </TouchableOpacity>
 

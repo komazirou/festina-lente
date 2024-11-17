@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { TextInput } from "react-native-gesture-handler";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig"; // auth をインポート
 import { useDate } from "../DateProvider";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -31,13 +31,20 @@ export default function MonthScreen({ route }) {
 
   useEffect(() => {
     const fetchGoal = async () => {
-      const docRef = doc(db, "monthlyGoals", `month-${period}`);
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("ユーザーがログインしていません");
+        return;
+      }
+
+      const uid = user.uid;
+      const docRef = doc(db, "monthlyGoals", uid, "months", period); // ユーザーごとのデータ構造に変更
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         setSavedGoal(docSnap.data().goal);
       } else {
-        console.log("No such document!");
+        console.log("データが見つかりません");
       }
     };
 
@@ -45,9 +52,17 @@ export default function MonthScreen({ route }) {
   }, [period]);
 
   const saveGoal = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("ユーザーがログインしていません");
+      return;
+    }
+
+    const uid = user.uid;
+    const docRef = doc(db, "monthlyGoals", uid, "months", period); // ユーザーごとのデータ構造に変更
+
     if (goal.trim()) {
-      const docRef = doc(db, "monthlyGoals", `month-${period}`);
-      await setDoc(docRef, { goal });
+      await setDoc(docRef, { goal }, { merge: true });
       setSavedGoal(goal);
       setGoal("");
     }
